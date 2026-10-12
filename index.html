@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PORTFOLIO // COMMAND</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; cursor:none; }
+  :root { --red:#E60012; --dark-red:#8B0000; --black:#0a0a0a; --white:#f5f5f5; }
+  html, body {
+    height:100%; overflow:hidden; background:var(--black);
+    color:var(--white); font-family:'Anton',sans-serif; user-select:none;
+  }
+
+  /* ============ VIDEO BACKGROUND UTAMA (MENU) ============ */
+  .bg-video {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: -6;
+    opacity: 0.45;
+    filter: brightness(0.55) contrast(1.2);
+    pointer-events: none;
+    transition: opacity .5s ease;
+  }
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.1);
+    z-index: -5;
+    pointer-events: none;
+  }
+
+  /* ============ BACKGROUND KHUSUS PER HALAMAN ============ */
+  .page-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 99;                /* di bawah page (100), di atas bg utama */
+    opacity: 0;
+    transition: opacity .5s ease;
+    pointer-events: none;
+    object-fit: cover;
+    width: 100vw;
+    height: 100vh;
+    filter: brightness(0.5) contrast(1.2);
+  }
+  .page-bg.active { opacity: 1; }
+  .page-bg-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(0,0,0,0.1);
+    opacity: 0;
+    transition: opacity .5s ease;
+    pointer-events: none;
+  }
+  .page-bg-overlay.active { opacity: 1; }
+
+  /* ============ CURSOR ============ */
+  .cursor {
+    position:fixed; width:24px; height:24px;
+    border:3px solid var(--red); border-radius:50%;
+    pointer-events:none; z-index:9999;
+    transition:transform .12s ease, background .2s;
+    transform:translate(-50%,-50%); mix-blend-mode:difference;
+  }
+  .cursor.hover { transform:translate(-50%,-50%) scale(1.8); background:var(--red); }
+
+  .bg { position:fixed; inset:0; z-index:-7; }
+
+  .red-stripe {
+    position:fixed; top:-20%; left:35%; width:40vw; height:160vh;
+    background:var(--red); transform:rotate(35deg); z-index:-4;
+    box-shadow:0 0 80px rgba(247, 9, 108, 0.6); opacity:0.85;
+    mix-blend-mode: multiply;
+  }
+
+  .halftone {
+    position:fixed; inset:0;
+    background-image:radial-gradient(circle, #000 1px, transparent 1.5px);
+    background-size:8px 8px; z-index:-3;
+    opacity:0.35; pointer-events:none;
+  }
+
+  .vignette {
+    position:fixed; inset:0;
+    background:radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.9) 100%);
+    z-index:-2; pointer-events:none;
+  }
+
+  .character {
+    position:fixed; right:5vw; bottom:0; width:55vw; height:95vh;
+    z-index:0; pointer-events:none;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .character svg, .character img {
+    width:100%; height:100%; object-fit:contain;
+    filter:drop-shadow(0 0 40px rgba(230,0,18,0.5));
+  }
+
+  .menu-wrap {
+    position:fixed; left:6vw; top:50%;
+    transform:translateY(-50%); z-index:10;
+    display:flex; flex-direction:column; gap:4px;
+    transition:transform .4s ease, opacity .4s ease;
+  }
+  .menu-item {
+    font-family:'Archivo Black','Anton',sans-serif;
+    font-size:clamp(1.6rem, 3vw, 2.6rem);
+    color:var(--white); text-transform:uppercase;
+    letter-spacing:-1px; padding:6px 22px;
+    position:relative;
+    transform:translateX(-200%) skewX(-8deg);
+    opacity:0;
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+    -webkit-text-stroke:2px #000;
+    text-shadow:3px 3px 0 #000, -1px -1px 0 #fff, 4px 4px 0 rgba(0,0,0,0.9);
+    line-height:1; white-space:nowrap;
+  }
+  .menu-item::before {
+    content:''; position:absolute; inset:0;
+    background:var(--white); z-index:-1;
+    clip-path:polygon(3% 15%, 100% 5%, 97% 85%, 0% 95%);
+    transition:background .2s;
+  }
+  .menu-item[data-color="white"] { color:#fff; }
+  .menu-item[data-color="red"]   { color:var(--red); }
+  .menu-item[data-color="black"] {
+    color:#000; -webkit-text-stroke:1.5px #fff;
+    text-shadow:3px 3px 0 var(--white);
+  }
+  .menu-item.show { transform:translateX(0) skewX(-8deg); opacity:1; }
+  .menu-item:nth-child(1).show { transition-delay:.1s; }
+  .menu-item:nth-child(2).show { transition-delay:.2s; }
+  .menu-item:nth-child(3).show { transition-delay:.3s; }
+  .menu-item:nth-child(4).show { transition-delay:.4s; }
+  .menu-item:nth-child(5).show { transition-delay:.5s; }
+  .menu-item:nth-child(6).show { transition-delay:.6s; }
+  .menu-item:nth-child(7).show { transition-delay:.7s; }
+  .menu-item:hover {
+    transform:translateX(28px) skewX(-8deg) scale(1.05);
+    animation:wobble .35s ease; z-index:5;
+    color:#fff; -webkit-text-stroke:2px #000;
+    text-shadow:3px 3px 0 #000;
+  }
+  .menu-item:hover::before { background:var(--red); }
+  @keyframes wobble {
+    0%,100% { transform:translateX(28px) skewX(-8deg) scale(1.05) rotate(0deg); }
+    25%     { transform:translateX(28px) skewX(-8deg) scale(1.05) rotate(-2deg); }
+    75%     { transform:translateX(28px) skewX(-8deg) scale(1.05) rotate(2deg); }
+  }
+
+  .command-label {
+    position:fixed; bottom:2vh; left:6vw;
+    font-family:'Archivo Black','Anton',sans-serif;
+    font-size:clamp(3.5rem, 8vw, 7rem);
+    color:var(--white); letter-spacing:-5px;
+    -webkit-text-stroke:3px #000;
+    text-shadow:5px 5px 0 #000, 8px 8px 0 var(--red);
+    transform:skewX(-8deg); z-index:20; opacity:0;
+    transition:opacity .6s ease .8s; line-height:0.9;
+  }
+  .command-label.show { opacity:1; }
+
+  .money {
+    position:fixed; bottom:2vh; left:6vw;
+    font-family:'Archivo Black',sans-serif;
+    font-size:1.4rem; color:var(--white);
+    -webkit-text-stroke:1px #000;
+    text-shadow:2px 2px 0 #000;
+    z-index:25; opacity:0;
+    transform:skewX(-8deg);
+    transition:opacity .5s ease 1s;
+  }
+  .money.show { opacity:1; }
+  .money span:first-child { color:var(--red); }
+
+  .top-tag {
+    position:fixed; top:4vh; right:5vw; z-index:20;
+    display:flex; flex-direction:column; align-items:flex-end; gap:12px;
+    opacity:0; transition:opacity .6s ease .4s;
+  }
+  .top-tag.show { opacity:1; }
+  .tag {
+    font-family:'Archivo Black',sans-serif;
+    font-size:1.2rem; padding:8px 18px;
+    letter-spacing:-0.5px;
+    -webkit-text-stroke:1.5px #000;
+    text-shadow:3px 3px 0 #000;
+    transform:skewX(-8deg);
+  }
+  .tag.like { background:var(--white); color:#000; }
+  .tag.camp { background:#000; color:var(--white); font-size:1.6rem; }
+  .tag.camp small {
+    display:block; font-size:0.6rem;
+    letter-spacing:4px; color:var(--red); margin-top:2px;
+  }
+
+  .star-deco {
+    position:fixed; color:var(--red); font-size:2.5rem;
+    z-index:15; animation:spin 10s linear infinite;
+    text-shadow:2px 2px 0 #000;
+  }
+  .star-deco.s1 { top:20%; right:40%; }
+  .star-deco.s2 { bottom:30%; right:8%; animation-duration:14s; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ============ PAGES ============ */
+  .page {
+    position:fixed; inset:0;
+    background:rgba(10,10,10,0.55);   /* ← dibuat semi-transparan biar background kelihatan */
+    backdrop-filter: blur(2px);        /* ← efek blur biar teks tetap terbaca */
+    padding:8vh 8vw; overflow-y:auto;
+    transform:translateX(100%) skewX(-10deg);
+    transition:transform .6s cubic-bezier(.77,0,.175,1);
+    z-index:100;
+  }
+  .page.active { transform:translateX(0) skewX(0); }
+  .page h2 {
+    font-family:'Archivo Black','Anton',sans-serif;
+    font-size:clamp(3rem, 8vw, 6rem);
+    color:var(--red); letter-spacing:-3px;
+    transform:skewX(-8deg); margin-bottom:40px;
+    -webkit-text-stroke:3px #000;
+    text-shadow:5px 5px 0 var(--white);
+    display:inline-block;
+  }
+  .page p {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:1.3rem; letter-spacing:1.5px;
+    line-height:1.6; max-width:800px;
+    margin-bottom:18px; color:#eee;
+  }
+  .back-btn {
+    position:fixed; top:30px; left:30px;
+    font-family:'Archivo Black',sans-serif;
+    font-size:1rem; color:#fff;
+    background:var(--red);
+    padding:12px 22px; border:3px solid #000;
+    letter-spacing:2px; transform:skewX(-8deg);
+    z-index:200; -webkit-text-stroke:1px #000;
+    text-shadow:2px 2px 0 #000;
+    transition:all .25s ease;
+  }
+  .back-btn:hover {
+    background:#fff; color:var(--red);
+    transform:skewX(-8deg) scale(1.08);
+  }
+  .skill-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:18px; margin-top:30px;
+  }
+  .skill-card {
+    background:#fff; color:#000; padding:22px;
+    font-family:'Archivo Black',sans-serif;
+    font-size:1.3rem; text-align:center;
+    transform:skewX(-6deg);
+    transition:all .25s ease;
+    border:4px solid #000;
+  }
+  .skill-card:hover {
+    background:var(--red); color:#fff;
+    transform:skewX(-6deg) translate(-6px,-6px);
+    box-shadow:8px 8px 0 #fff;
+  }
+  .project {
+    background:linear-gradient(135deg, #1a1a1a, #050505);
+    border-left:10px solid var(--red);
+    padding:22px 26px; margin-bottom:18px;
+    transform:skewX(-3deg);
+    transition:all .3s ease;
+  }
+  .project:hover {
+    transform:skewX(-3deg) translateX(12px);
+    border-left-color:#fff;
+    background:linear-gradient(135deg, #2a0505, #1a0303);
+  }
+  .project h3 {
+    font-family:'Archivo Black',sans-serif;
+    color:var(--red); font-size:1.6rem;
+    letter-spacing:-1px; margin-bottom:6px;
+    text-shadow:2px 2px 0 #000;
+  }
+  .project p { font-size:1.05rem; opacity:0.85; margin:0; }
+
+  .intro {
+    position:fixed; inset:0; background:#000;
+    z-index:9998; display:flex;
+    align-items:center; justify-content:center;
+    transition:opacity .5s ease;
+  }
+  .intro.hide { opacity:0; pointer-events:none; }
+  .intro-text {
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(2rem, 6vw, 5rem);
+    color:var(--red); letter-spacing:-3px;
+    transform:skewX(-10deg);
+    -webkit-text-stroke:2px #fff;
+    text-shadow:5px 5px 0 #000;
+    animation:introPulse .5s ease infinite alternate;
+  }
+  @keyframes introPulse {
+    from { transform:skewX(-10deg) scale(1); }
+    to   { transform:skewX(-10deg) scale(1.06); }
+  }
+
+  .glitch { position:relative; }
+  .glitch::before, .glitch::after {
+    content:attr(data-text);
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+  }
+  .glitch::before { color:#00f; animation:glitch1 3s infinite; z-index:-1; }
+  .glitch::after  { color:var(--red); animation:glitch2 3s infinite; z-index:-2; }
+  @keyframes glitch1 {
+    0%,92%,100% { transform:translate(0); }
+    93% { transform:translate(-4px,2px); }
+    95% { transform:translate(3px,-2px); }
+  }
+  @keyframes glitch2 {
+    0%,92%,100% { transform:translate(0); }
+    94% { transform:translate(4px,1px); }
+    96% { transform:translate(-3px,-1px); }
+  }
+
+  @media (max-width:768px) {
+    .character { width:90vw; right:-20vw; opacity:0.5; }
+    .menu-wrap { left:4vw; }
+    .menu-item { font-size:1.5rem; padding:5px 16px; }
+    .command-label { font-size:3rem; left:4vw; }
+    .money { left:4vw; font-size:1.1rem; }
+    .top-tag { top:2vh; right:3vw; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ VIDEO BACKGROUND UTAMA (MENU) ============ -->
+<video autoplay muted loop playsinline style="position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:0;">
+  <source src="assets/p5rr.mp4" type="video/webm">
+</video>
+  <div class="bg-overlay"></div>
+
+  <!-- ============ BACKGROUND KHUSUS HALAMAN (diisi via JS) ============ -->
+  <div class="page-bg-overlay" id="pageBgOverlay"></div>
+
+  <!-- ============ LAYER BACKGROUND ============ -->
+  <div class="bg" id="bgLayer"></div>
+  <div class="red-stripe" id="redStripe"></div>
+  <div class="halftone" id="halftoneLayer"></div>
+  <div class="vignette"></div>
+  <div class="character" id="characterLayer"></div>
+
+  <!-- ============ CURSOR ============ -->
+  <div class="cursor" id="cursor"></div>
+
+  <!-- ============ TOP TAGS ============ -->
+  <div class="top-tag" id="topTag">
+    <div class="tag camp">
+    </div>
+  </div>
+
+  <div class="star-deco s1">✦</div>
+  <div class="star-deco s2">★</div>
+
+  <!-- ============ MENU ============ -->
+  <div class="menu-wrap" id="menuWrap"></div>
+  <div class="command-label" id="commandLabel">COMMAND</div>
+  <div class="money" id="money">
+    <span id="currencySymbol">¥</span><span id="moneyVal">0</span>
+  </div>
+
+  <!-- ============ PAGES ============ -->
+  <div id="pagesContainer"></div>
+
+  <!-- ============ INTRO ============ -->
+  <div class="intro" id="intro">
+    <div class="intro-text" id="introText">TAKE YOUR HEART</div>
+  </div>
+
+<script>
+/* ============================================
+   KONFIGURASI
+============================================ */
+const CONFIG = {
+  introText: "TAKE YOUR HEART",
+  currencySymbol: "¥",
+  moneyTarget: 6340,
+
+  background: {
+    baseColor: "#0a0a0a",
+    stripe: { enabled:true, color:"#E60012", rotation:35, left:"35%", width:"40vw", glow:"rgba(230,0,18,0.6)" },
+    halftone: { enabled:true, color:"#000", size:"8px", opacity:0.35 },
+    vignette: { enabled:true, strength:0.9 }
+  },
+
+  character: { imageUrl:null, opacity:0 },
+
+  menu: [
+    { label:"ABOUT ME",    page:"about",       color:"white" },
+    { label:"SKILLS",      page:"skills",      color:"red" },
+    { label:"PROJECTS",    page:"projects",    color:"white" },
+    { label:"EXPERIENCE",  page:"experience",  color:"black" },
+    { label:"COOPERATION", page:"cooperation", color:"white" },
+    { label:"CONTACT",     page:"contact",     color:"red" },
+    { label:"SYSTEM",      page:"system",      color:"white" }
+  ],
+
+  /* ============================================
+     HALAMAN + BACKGROUND KHUSUS
+     ============================================
+     Setiap halaman bisa punya "background" sendiri.
+     Kalau background tidak diisi → pakai video utama.
+
+     Format background:
+     {
+       type: "video" | "image" | "color",
+       src: "path/file",           // untuk video/image
+       opacity: 0.5,               // untuk video/image
+       brightness: 0.5,            // untuk video/image
+       overlay: 0.4                // lapisan gelap di atas (0-1)
+     }
+  ============================================ */
+  pages: {
+
+    /* ─────────────────────────────────────
+       📄 ABOUT ME
+    ───────────────────────────────────── */
+    about: {
+      title: "ABOUT ME",
+      content: `
+        <p>Halo perkenalkan nama aku Djody Prayogo Priambodo
+        <strong style="color:#E60012">WEB DEVELOPER</strong>
+        yang suka membangun pengalaman digital berkesan.</p>
+        <p>Ganti paragraf ini dengan cerita tentang dirimu.</p>
+      `,
+      background: {
+        type: "video",
+        src: "assets/lucy.mp4",   // ← ganti file-nya
+        opacity: 0.9,
+        brightness: 1.0,
+        overlay: 0
+      }
+    },
+
+    /* ─────────────────────────────────────
+       📄 SKILLS
+    ───────────────────────────────────── */
+    skills: {
+      title: "SKILLS",
+      content: `
+        <div class="skill-grid">
+          <div class="skill-card">HTML</div>
+          <div class="skill-card">CSS</div>
+          <div class="skill-card">JAVASCRIPT</div>
+          <div class="skill-card">REACT</div>
+          <div class="skill-card">NODE.JS</div>
+          <div class="skill-card">FIGMA</div>
+        </div>
+      `,
+      background: {
+        type: "image",
+        src: "assets/images/skills-bg.jpg",  // ← gambar
+        opacity: 0.6,
+        brightness: 0.5,
+        overlay: 0.3
+      }
+    },
+
+    /* ─────────────────────────────────────
+       📄 PROJECTS
+    ───────────────────────────────────── */
+    projects: {
+      title: "PROJECTS",
+      content: `
+        <div class="project"><h3>PROJECT ONE</h3><p>Deskripsi project pertama.</p></div>
+        <div class="project"><h3>PROJECT TWO</h3><p>Deskripsi project kedua.</p></div>
+        <div class="project"><h3>PROJECT THREE</h3><p>Deskripsi project ketiga.</p></div>
+      `,
+      background: {
+        type: "video",
+        src: "assets/videos/projects.mp4",
+        opacity: 0.5,
+        brightness: 0.5,
+        overlay: 0.3
+      }
+    },
+
+    /* ─────────────────────────────────────
+       📄 EXPERIENCE
+    ───────────────────────────────────── */
+    experience: {
+      title: "EXPERIENCE",
+      content: `
+        <div class="project"><h3>2024 — SEKARANG</h3><p>Posisi / perusahaan / pencapaian.</p></div>
+        <div class="project"><h3>2022 — 2024</h3><p>Posisi sebelumnya.</p></div>
+      `,
+      background: {
+        type: "image",
+        src: "assets/images/experience-bg.jpg",
+        opacity: 0.6,
+        brightness: 0.5,
+        overlay: 0.3
+      }
+    },
+
+    /* ─────────────────────────────────────
+       📄 COOPERATION
+    ───────────────────────────────────── */
+    cooperation: {
+      title: "COOPERATION",
+      content: `
+        <p>Orang / komunitas / klien yang pernah bekerja sama.</p>
+        <div class="skill-grid">
+          <div class="skill-card">CLIENT A</div>
+          <div class="skill-card">CLIENT B</div>
+          <div class="skill-card">TEAM C</div>
+        </div>
+      `,
+      background: {
+        type: "color",
+        src: "#1a0000"                      // warna solid
+      }
+    },
+
+    /* ─────────────────────────────────────
+       📄 CONTACT
+    ───────────────────────────────────── */
+    contact: {
+      title: "CONTACT",
+      content: `
+        <p>📧 email@kamu.com</p>
+        <p>📱 @username</p>
+        <p>🔗 linkedin.com/in/username</p>
+      `,
+      background: {
+        type: "image",
+        src: "assets/images/contact-bg.jpg",
+        opacity: 0.6,
+        brightness: 0.5,
+        overlay: 0.3
+      }
+    },
+
+    /* ─────────────────────────────────────
+       📄 SYSTEM
+    ───────────────────────────────────── */
+    system: {
+      title: "SYSTEM",
+      content: `
+        <p>Version 1.0 — Portofolio Persona 5 Style</p>
+        <p>Dibuat dengan HTML, CSS, & JavaScript murni.</p>
+      `
+      // ← tidak ada background = pakai video utama
+    }
+  },
+
+  /* 🔊 SOUND EFFECT */
+  sounds: {
+    enabled: true,
+    hover: { src:"assets/sounds/click-hover.mp3", volume:0.9 },
+    click: { src:"assets/sounds/click-hover.mp3", volume:0.9 }
+  },
+
+  /* 🎵 BGM */
+  bgm: {
+    enabled: true,
+    src: "assets/sounds/bgm.mp3",
+    volume: 1,
+    loop: true,
+    startOnFirstInteraction: true,
+    showMuteButton: true
+  }
+};
+
+/* ============================================
+   SOUND MANAGER
+============================================ */
+const Sound = (() => {
+  let hoverAudio, clickAudio, bgmAudio;
+  let bgmStarted = false;
+  let muted = false;
+
+  function init() {
+    const cfg = CONFIG.sounds;
+    const bgmCfg = CONFIG.bgm;
+
+    if (cfg.enabled && cfg.hover.src) {
+      hoverAudio = new Audio(cfg.hover.src);
+      hoverAudio.volume = cfg.hover.volume;
+      hoverAudio.preload = "auto";
+    }
+    if (cfg.enabled && cfg.click.src) {
+      clickAudio = new Audio(cfg.click.src);
+      clickAudio.volume = cfg.click.volume;
+      clickAudio.preload = "auto";
+    }
+    if (bgmCfg.enabled && bgmCfg.src) {
+      bgmAudio = new Audio(bgmCfg.src);
+      bgmAudio.volume = bgmCfg.volume;
+      bgmAudio.loop = bgmCfg.loop;
+      bgmAudio.preload = "auto";
+
+      if (bgmCfg.startOnFirstInteraction) {
+        const startBgm = () => {
+          if (!bgmStarted) { bgmAudio.play().catch(()=>{}); bgmStarted = true; }
+          ['click','keydown','mousemove'].forEach(e =>
+            document.removeEventListener(e, startBgm));
+        };
+        ['click','keydown','mousemove'].forEach(e =>
+          document.addEventListener(e, startBgm));
+      } else {
+        bgmAudio.play().catch(()=>{});
+        bgmStarted = true;
+      }
+
+      if (bgmCfg.showMuteButton) createMuteButton();
+    }
+  }
+
+  function playHover() {
+    if (!hoverAudio || muted) return;
+    try { hoverAudio.currentTime = 0; hoverAudio.play().catch(()=>{}); } catch(e){}
+  }
+  function playClick() {
+    if (!clickAudio || muted) return;
+    try { clickAudio.currentTime = 0; clickAudio.play().catch(()=>{}); } catch(e){}
+  }
+  function toggleMute() {
+    muted = !muted;
+    if (bgmAudio) bgmAudio.muted = muted;
+    const btn = document.getElementById('muteBtn');
+    if (btn) btn.textContent = muted ? '🔇' : '🔊';
+  }
+  function createMuteButton() {
+    const btn = document.createElement('button');
+    btn.id = 'muteBtn';
+    btn.textContent = '🔊';
+    btn.style.cssText = 'position:fixed;top:20px;right:20px;z-index:999;background:#E60012;color:#fff;border:3px solid #000;font-size:1.2rem;width:46px;height:46px;transform:skewX(-8deg);cursor:none;font-family:"Archivo Black",sans-serif;box-shadow:3px 3px 0 #000;transition:transform .2s;';
+    btn.addEventListener('mouseenter', () => {
+      btn.style.transform = 'skewX(-8deg) scale(1.1)';
+      playHover();
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'skewX(-8deg) scale(1)';
+    });
+    btn.addEventListener('click', toggleMute);
+    document.body.appendChild(btn);
+  }
+
+  return { init, playHover, playClick };
+})();
+
+/* ============================================
+   CURSOR
+============================================ */
+function initCursor() {
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top  = e.clientY + 'px';
+  });
+  document.querySelectorAll('.menu-item, .back-btn, .skill-card, .project, .command-label, #muteBtn').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+  });
+}
+
+/* ============================================
+   MONEY COUNTER
+============================================ */
+function animateMoney(start, end, duration) {
+  const el = document.getElementById('moneyVal');
+  if (!el) return;
+  const t0 = performance.now();
+  function step(now) {
+    const p = Math.min((now - t0) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.floor(start + (end - start) * eased).toLocaleString();
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============================================
+   BACKGROUND
+============================================ */
+function applyBackground() {
+  const bg = CONFIG.background;
+  document.body.style.background = bg.baseColor;
+  document.getElementById('bgLayer').style.background = bg.baseColor;
+
+  const stripe = document.getElementById('redStripe');
+  if (bg.stripe.enabled) {
+    stripe.style.background = bg.stripe.color;
+    stripe.style.transform = 'rotate(' + bg.stripe.rotation + 'deg)';
+    stripe.style.left = bg.stripe.left;
+    stripe.style.width = bg.stripe.width;
+    stripe.style.boxShadow = '0 0 80px ' + bg.stripe.glow;
+  } else stripe.style.display = 'none';
+
+  const ht = document.getElementById('halftoneLayer');
+  if (bg.halftone.enabled) {
+    ht.style.backgroundImage = 'radial-gradient(circle, ' + bg.halftone.color + ' 1px, transparent 1.5px)';
+    ht.style.backgroundSize = bg.halftone.size + ' ' + bg.halftone.size;
+    ht.style.opacity = bg.halftone.opacity;
+  } else ht.style.display = 'none';
+
+  const vg = document.querySelector('.vignette');
+  if (bg.vignette.enabled) {
+    vg.style.background = 'radial-gradient(circle at center, transparent 30%, rgba(0,0,0,' + bg.vignette.strength + ') 100%)';
+  }
+}
+
+/* ============================================
+   CHARACTER
+============================================ */
+function renderCharacter() {
+  const wrap = document.getElementById('characterLayer');
+  if (CONFIG.character.imageUrl) {
+    wrap.innerHTML = '<img src="' + CONFIG.character.imageUrl + '" alt="character">';
+  } else {
+    wrap.innerHTML =
+      '<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M100 500 Q90 350 130 280 L270 280 Q310 350 300 500 Z" fill="#000" stroke="#f5f5f5" stroke-width="3"/>' +
+        '<ellipse cx="200" cy="200" rx="75" ry="90" fill="#000" stroke="#f5f5f5" stroke-width="3"/>' +
+        '<path d="M130 150 Q120 90 170 80 Q200 60 240 80 Q290 90 275 160 Q280 130 260 120 Q240 100 210 110 Q180 95 150 120 Z" fill="#0a0a0a" stroke="#f5f5f5" stroke-width="3"/>' +
+        '<path d="M140 190 Q200 175 260 190 Q265 220 250 240 Q200 255 150 240 Q135 220 140 190 Z" fill="#f5f5f5" stroke="#000" stroke-width="3"/>' +
+        '<path d="M155 205 L190 200 L185 215 L155 215 Z" fill="#000"/>' +
+        '<path d="M245 205 L210 200 L215 215 L245 215 Z" fill="#000"/>' +
+        '<path d="M180 235 Q200 245 220 235" fill="none" stroke="#000" stroke-width="2.5"/>' +
+        '<path d="M130 280 L170 320 L200 300 L230 320 L270 280" fill="none" stroke="#f5f5f5" stroke-width="4"/>' +
+      '</svg>';
+  }
+  wrap.style.opacity = CONFIG.character.opacity;
+}
+
+/* ============================================
+   MENU & PAGES
+============================================ */
+function renderMenu() {
+  const wrap = document.getElementById('menuWrap');
+  wrap.innerHTML = CONFIG.menu.map(item =>
+    '<div class="menu-item" data-page="' + item.page + '" data-color="' + item.color + '">' + item.label + '</div>'
+  ).join('');
+}
+
+function renderPages() {
+  const container = document.getElementById('pagesContainer');
+  container.innerHTML = Object.entries(CONFIG.pages).map(([key, page]) =>
+    '<div class="page" id="page-' + key + '">' +
+      '<button class="back-btn" data-back>← BACK</button>' +
+      '<h2 class="glitch" data-text="' + page.title + '">' + page.title + '</h2>' +
+      page.content +
+    '</div>'
+  ).join('');
+}
+
+/* ============================================
+   ⭐ BACKGROUND KHUSUS HALAMAN
+============================================ */
+function showPageBackground(pageKey) {
+  const page = CONFIG.pages[pageKey];
+  const overlay = document.getElementById('pageBgOverlay');
+  const oldBg = document.querySelector('.page-bg');
+
+  // Hapus background halaman sebelumnya
+  if (oldBg) oldBg.remove();
+  overlay.classList.remove('active');
+
+  // Kalau halaman nggak punya background khusus → skip
+  if (!page || !page.background) return;
+
+  const bg = page.background;
+
+  if (bg.type === "color") {
+    // Warna solid — pakai div
+    const div = document.createElement('div');
+    div.className = 'page-bg active';
+    div.style.background = bg.src;
+    div.style.filter = 'none';
+    document.body.appendChild(div);
+    return;
+  }
+
+  if (bg.type === "image") {
+    // Gambar — pakai div dengan background-image
+    const div = document.createElement('div');
+    div.className = 'page-bg';
+    div.style.background = `url('${bg.src}') center/cover no-repeat`;
+    div.style.opacity = bg.opacity ?? 0.5;
+    div.style.filter = `brightness(${bg.brightness ?? 0.5}) contrast(1.2)`;
+    document.body.appendChild(div);
+    // Aktifkan setelah append (biar transisi fade jalan)
+    requestAnimationFrame(() => div.classList.add('active'));
+  }
+
+  if (bg.type === "video") {
+    // Video — pakai tag <video>
+    const video = document.createElement('video');
+    video.className = 'page-bg';
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.innerHTML = `<source src="${bg.src}" type="video/mp4">`;
+    video.style.opacity = 0;
+    video.style.filter = `brightness(${bg.brightness ?? 0.5}) contrast(1.2)`;
+    video.style.objectFit = 'cover';
+    document.body.appendChild(video);
+    video.play().catch(() => {});
+    requestAnimationFrame(() => {
+      video.style.opacity = bg.opacity ?? 0.5;
+    });
+  }
+
+  // Overlay gelap di atas background halaman
+  if (bg.overlay) {
+    overlay.style.background = `rgba(0,0,0,${bg.overlay})`;
+    requestAnimationFrame(() => overlay.classList.add('active'));
+  }
+}
+
+function hidePageBackground() {
+  const oldBg = document.querySelector('.page-bg');
+  const overlay = document.getElementById('pageBgOverlay');
+  if (oldBg) {
+    oldBg.classList.remove('active');
+    setTimeout(() => oldBg.remove(), 500);
+  }
+  overlay.classList.remove('active');
+}
+
+/* ============================================
+   INIT
+============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  applyBackground();
+  renderCharacter();
+  renderMenu();
+  renderPages();
+
+  document.getElementById('introText').textContent = CONFIG.introText;
+  document.getElementById('currencySymbol').textContent = CONFIG.currencySymbol;
+
+  Sound.init();
+
+  // Menu klik
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('mouseenter', Sound.playHover);
+    item.addEventListener('click', () => {
+      Sound.playClick();
+      const pageKey = item.dataset.page;
+      const page = document.getElementById('page-' + pageKey);
+      if (!page) return;
+
+      // ⭐ Tampilkan background khusus halaman ini
+      showPageBackground(pageKey);
+
+      const mw = document.getElementById('menuWrap');
+      mw.style.transform = 'translateY(-50%) translateX(-120%)';
+      mw.style.opacity = '0';
+      document.getElementById('commandLabel').style.opacity = '0';
+      setTimeout(() => page.classList.add('active'), 250);
+    });
+  });
+
+  // Back button
+  document.querySelectorAll('[data-back]').forEach(btn => {
+    btn.addEventListener('mouseenter', Sound.playHover);
+    btn.addEventListener('click', () => {
+      Sound.playClick();
+
+      // ⭐ Sembunyikan background halaman
+      hidePageBackground();
+
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      setTimeout(() => {
+        const mw = document.getElementById('menuWrap');
+        mw.style.transform = 'translateY(-50%) translateX(0)';
+        mw.style.opacity = '1';
+        document.getElementById('commandLabel').style.opacity = '1';
+      }, 350);
+    });
+  });
+
+  // Reveal
+  setTimeout(() => {
+    document.getElementById('intro').classList.add('hide');
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.add('show'));
+    document.getElementById('commandLabel').classList.add('show');
+    document.getElementById('topTag').classList.add('show');
+    document.getElementById('money').classList.add('show');
+    animateMoney(0, CONFIG.moneyTarget, 1200);
+    initCursor();
+  }, 1000);
+});
+</script>
+</body>
+</html>
