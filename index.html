@@ -436,7 +436,7 @@ const CONFIG = {
         <p>Halo perkenalkan nama aku Djody Prayogo Priambodo
         <strong style="color:#E60012">WEB DEVELOPER</strong>
         yang suka membangun pengalaman digital berkesan.</p>
-        <p>Ganti paragraf ini dengan cerita tentang dirimu.</p>
+        <p>Jadi saya bercita cita menjadi ternak lele handal.</p>
       `,
       background: {
         type: "video",
@@ -446,20 +446,16 @@ const CONFIG = {
         overlay: 0
       }
     },
-
-    /* ─────────────────────────────────────
-       📄 SKILLS
-    ───────────────────────────────────── */
     skills: {
       title: "SKILLS",
       content: `
         <div class="skill-grid">
-          <div class="skill-card">HTML</div>
-          <div class="skill-card">CSS</div>
-          <div class="skill-card">JAVASCRIPT</div>
-          <div class="skill-card">REACT</div>
+          <div class="skill-card">membuat aset game</div>
+          <div class="skill-card">Desain</div>
+          <div class="skill-card">Game developer</div>
+          <div class="skill-card">Pemrograman Mobile</div>
           <div class="skill-card">NODE.JS</div>
-          <div class="skill-card">FIGMA</div>
+          <div class="skill-card">Ternak ayam</div>
         </div>
       `,
       background: {
@@ -497,7 +493,7 @@ const CONFIG = {
       title: "EXPERIENCE",
       content: `
         <div class="project"><h3>2024 — SEKARANG</h3><p>Posisi / perusahaan / pencapaian.</p></div>
-        <div class="project"><h3>2022 — 2024</h3><p>Posisi sebelumnya.</p></div>
+        <div class="project"><h3>2022-2025</h3><p>Penjoki scam handal</p></div>
       `,
       background: {
         type: "image",
@@ -533,9 +529,9 @@ const CONFIG = {
     contact: {
       title: "CONTACT",
       content: `
-        <p>📧 email@kamu.com</p>
-        <p>📱 @username</p>
-        <p>🔗 linkedin.com/in/username</p>
+        <p>jodijzjsu@gmail.com</p>
+        <p> kazu</p>
+        <p> linkedin.com/in/username</p>
       `,
       background: {
         type: "image",
@@ -577,9 +573,6 @@ const CONFIG = {
   }
 };
 
-/* ============================================
-   SOUND MANAGER
-============================================ */
 const Sound = (() => {
   let hoverAudio, clickAudio, bgmAudio;
   let bgmStarted = false;
@@ -716,9 +709,7 @@ function applyBackground() {
   }
 }
 
-/* ============================================
-   CHARACTER
-============================================ */
+
 function renderCharacter() {
   const wrap = document.getElementById('characterLayer');
   if (CONFIG.character.imageUrl) {
@@ -760,9 +751,6 @@ function renderPages() {
   ).join('');
 }
 
-/* ============================================
-   ⭐ BACKGROUND KHUSUS HALAMAN
-============================================ */
 function showPageBackground(pageKey) {
   const page = CONFIG.pages[pageKey];
   const overlay = document.getElementById('pageBgOverlay');
@@ -835,9 +823,6 @@ function hidePageBackground() {
   overlay.classList.remove('active');
 }
 
-/* ============================================
-   INIT
-============================================ */
 document.addEventListener('DOMContentLoaded', () => {
   applyBackground();
   renderCharacter();
